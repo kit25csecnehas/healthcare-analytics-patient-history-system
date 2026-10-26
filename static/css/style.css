@@ -1,0 +1,281 @@
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: "Segoe UI", Arial, sans-serif;
+    background: #f4f7fc;
+    color: #1d2a3b;
+}
+
+.sidebar {
+    position: fixed;
+    inset: 0 auto 0 0;
+    width: 235px;
+    background: #142b49;
+    color: white;
+    padding: 28px 18px;
+}
+
+.sidebar h2 {
+    margin: 0 0 45px;
+    font-size: 22px;
+}
+
+.menu-label, .eyebrow {
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    font-weight: 700;
+    color: #8fa7c6;
+}
+
+.sidebar a {
+    display: block;
+    text-decoration: none;
+    color: #c1cee0;
+    padding: 13px 14px;
+    margin: 7px 0;
+    border-radius: 9px;
+}
+
+.sidebar a:hover, .sidebar a.active {
+    background: #2e4b70;
+    color: white;
+}
+
+.sidebar-footer {
+    position: absolute;
+    bottom: 25px;
+    font-size: 12px;
+    color: #aabbd0;
+}
+
+.main-content {
+    margin-left: 235px;
+    padding: 32px;
+}
+
+.topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+    margin-bottom: 25px;
+}
+
+h1 {
+    margin: 7px 0;
+    font-size: 30px;
+}
+
+.subtitle, .panel-subtitle {
+    color: #7d8a9e;
+    font-size: 14px;
+}
+
+.admin-badge {
+    background: white;
+    border: 1px solid #e4eaf2;
+    padding: 11px 16px;
+    border-radius: 10px;
+    font-size: 13px;
+}
+
+.welcome {
+    background: linear-gradient(115deg, #1d4779, #3678f5);
+    color: white;
+    border-radius: 18px;
+    padding: 28px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+}
+
+.welcome .eyebrow {
+    color: #c4dcff;
+}
+
+.welcome h2 {
+    margin: 10px 0;
+    font-size: 23px;
+}
+
+.welcome p:last-child {
+    color: #e0ebff;
+    font-size: 14px;
+}
+
+.welcome-icon {
+    font-size: 52px;
+    opacity: 0.8;
+    padding: 10px 25px;
+}
+
+.stats {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 17px;
+    margin-bottom: 25px;
+}
+
+.stat-card, .panel {
+    background: white;
+    border: 1px solid #e7edf5;
+    border-radius: 15px;
+    padding: 22px;
+    box-shadow: 0 5px 20px rgba(31, 57, 87, 0.035);
+}
+
+.stat-card p {
+    color: #728198;
+    font-size: 13px;
+    margin: 0;
+}
+
+.stat-card h2 {
+    font-size: 32px;
+    margin: 13px 0 8px;
+}
+
+.stat-card span {
+    font-size: 12px;
+    color: #95a1b1;
+}
+
+.analytics-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.panel h3 {
+    margin: 0;
+    font-size: 17px;
+}
+
+.chart-container {
+    height: 270px;
+    margin-top: 20px;
+}
+
+footer {
+    margin-top: 30px;
+    color: #7d8a9e;
+    font-size: 12px;
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+@media (max-width: 1100px) {
+    .stats {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .analytics-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 650px) {
+    .sidebar {
+        position: static;
+        width: 100%;
+    }
+
+    .sidebar h2 {
+        margin-bottom: 20px;
+    }
+
+    .sidebar-footer {
+        display: none;
+    }
+
+    .main-content {
+        margin-left: 0;
+        padding: 18px;
+    }
+
+    .topbar {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .welcome-icon {
+        display: none;
+    }
+
+    .stats {
+        grid-template-columns: 1fr;
+    }
+}
+
+.registration-panel {
+    margin-bottom: 25px;
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px;
+    margin-top: 20px;
+}
+
+.form-grid label {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    color: #52637a;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.form-grid input,
+.form-grid select {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #dce4ef;
+    border-radius: 8px;
+    background: #fff;
+    color: #1d2a3b;
+    font: inherit;
+}
+
+.form-grid input:focus,
+.form-grid select:focus {
+    outline: 2px solid #3678f5;
+    outline-offset: 1px;
+}
+
+.full-width {
+    grid-column: 1 / -1;
+}
+
+.submit-button {
+    margin-top: 20px;
+    padding: 12px 20px;
+    background: #3678f5;
+    color: white;
+    border: 0;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.submit-button:hover {
+    background: #245fce;
+}
+
+#form-message {
+    font-size: 14px;
+    color: #18794e;
+}
+
+@media (max-width: 650px) {
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+}

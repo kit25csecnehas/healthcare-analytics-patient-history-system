@@ -1,0 +1,163 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Patient Records</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .records-panel { margin-top: 25px; }
+        .search-box {
+            width: 100%;
+            max-width: 400px;
+            padding: 12px;
+            border: 1px solid #dce4ef;
+            border-radius: 8px;
+            margin: 18px 0;
+        }
+        .table-wrap { overflow-x: auto; }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+        }
+        th, td {
+            text-align: left;
+            padding: 13px;
+            border-bottom: 1px solid #e7edf5;
+            font-size: 13px;
+        }
+        th { background: #f4f7fc; color: #52637a; }
+        .back-link { color: #3678f5; text-decoration: none; }
+        .empty-message { padding: 20px 0; color: #728198; }
+    </style>
+</head>
+<body>
+    <aside class="sidebar">
+        <h2>✚ HealthCare</h2>
+        <p class="menu-label">MAIN MENU</p>
+        <a href="/">Dashboard</a>
+        <a class="active" href="/patients">Patients</a>
+        <a href="/#appointments">Appointments</a>
+        <a href="/#analytics">Analytics</a>
+        <a href="/doctors">Doctors</a>
+        <div class="sidebar-footer">Patient History System</div>
+    </aside>
+
+    <main class="main-content">
+        <header class="topbar">
+            <div>
+                <p class="eyebrow">PATIENT MANAGEMENT</p>
+                <h1>Patient Records</h1>
+                <p class="subtitle">View and search registered patient details.</p>
+            </div>
+            <a class="back-link" href="/">← Back to Dashboard</a>
+        </header>
+
+        <section class="panel records-panel">
+            <h3>Registered Patients</h3>
+            <input
+                id="search"
+                class="search-box"
+                type="search"
+                placeholder="Search by name, ID, phone, or email..."
+                aria-label="Search patients"
+            >
+
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Patient Name</th>
+                            <th>Date of Birth</th>
+                            <th>Gender</th>
+                            <th>Phone</th>
+                            <th>Email</th>
+                            <th>Blood Group</th>
+                        </tr>
+                    </thead>
+                    <tbody id="patient-list">
+                        <tr><td colspan="7">Loading records...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <p id="record-message" class="empty-message" role="status"></p>
+        </section>
+    </main>
+
+    <script>
+        let allPatients = [];
+
+        async function loadPatients() {
+            const tbody = document.getElementById("patient-list");
+            const message = document.getElementById("record-message");
+
+            try {
+                const response = await fetch("/api/patients");
+                if (!response.ok) throw new Error("Could not load records.");
+
+                allPatients = await response.json();
+                renderPatients(allPatients);
+            } catch (error) {
+                tbody.replaceChildren();
+                message.textContent = error.message;
+            }
+        }
+
+        function renderPatients(patients) {
+            const tbody = document.getElementById("patient-list");
+            const message = document.getElementById("record-message");
+            tbody.replaceChildren();
+
+            if (patients.length === 0) {
+                message.textContent = "No matching patient records found.";
+                return;
+            }
+
+            message.textContent = patients.length + " patient record(s) shown.";
+
+            for (const patient of patients) {
+                const row = document.createElement("tr");
+                const values = [
+                    patient.patient_id,
+                    patient.patient_name,
+                    patient.date_of_birth || "—",
+                    patient.gender || "—",
+                    patient.phone || "—",
+                    patient.email || "—",
+                    patient.blood_group || "—"
+                ];
+
+                for (const value of values) {
+                    const cell = document.createElement("td");
+                    cell.textContent = value;
+                    row.appendChild(cell);
+                }
+
+                tbody.appendChild(row);
+            }
+        }
+
+        document.getElementById("search").addEventListener("input", event => {
+            const query = event.target.value.toLowerCase().trim();
+
+            const filtered = allPatients.filter(patient =>
+                [
+                    patient.patient_id,
+                    patient.patient_name,
+                    patient.phone,
+                    patient.email
+                ].some(value =>
+                    String(value || "").toLowerCase().includes(query)
+                )
+            );
+
+            renderPatients(filtered);
+        });
+
+        loadPatients();
+    </script>
+</body>
+</html>

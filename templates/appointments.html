@@ -1,0 +1,163 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Appointments | Healthcare</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+<style>
+.panel { margin-bottom: 22px; }
+form { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:15px; margin-top:20px; }
+label { display:grid; gap:7px; font-size:13px; }
+input,select { padding:12px; border:1px solid #dce4ef; border-radius:8px; }
+button { padding:12px; border:0; border-radius:8px; background:#3678f5; color:white; cursor:pointer; }
+.full { grid-column:1/-1; }
+.table-wrap { overflow-x:auto; }
+table { width:100%; border-collapse:collapse; }
+th,td { text-align:left; padding:12px; border-bottom:1px solid #e7edf5; font-size:13px; }
+th { background:#f4f7fc; }
+@media(max-width:650px){form{grid-template-columns:1fr}.full{grid-column:auto}}
+</style>
+</head>
+<body>
+<aside class="sidebar">
+<h2>✚ HealthCare</h2>
+<p class="menu-label">MAIN MENU</p>
+<a href="/">Dashboard</a>
+<a href="/patients">Patients</a>
+<a href="/doctors">Doctors</a>
+<a class="active" href="/appointments">Appointments</a>
+<a href="/#analytics">Analytics</a>
+<div class="sidebar-footer">Patient History System</div>
+</aside>
+
+<main class="main-content">
+<header class="topbar">
+<div>
+<p class="eyebrow">SCHEDULING</p>
+<h1>Appointment Management</h1>
+<p class="subtitle">Schedule and review patient appointments.</p>
+</div>
+</header>
+
+<section class="panel">
+<h3>Schedule an Appointment</h3>
+<form id="appointment-form">
+<label>Patient *
+<select name="patient_id" id="patient" required>
+<option value="">Loading patients...</option>
+</select></label>
+<label>Doctor *
+<select name="doctor_id" id="doctor" required>
+<option value="">Loading doctors...</option>
+</select></label>
+<label>Date and time *
+<input type="datetime-local" name="appointment_date" required></label>
+<label>Reason for visit
+<input name="reason" maxlength="255" placeholder="Reason for appointment"></label>
+<button class="full" type="submit">Schedule Appointment</button>
+</form>
+<p id="message" role="status"></p>
+</section>
+
+<section class="panel">
+<h3>Appointment Records</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>ID</th><th>Patient</th><th>Doctor</th><th>Date & Time</th><th>Reason</th><th>Status</th></tr></thead>
+<tbody id="appointments"><tr><td colspan="6">Loading...</td></tr></tbody>
+</table>
+</div>
+</section>
+</main>
+
+<script>
+async function getJSON(url) {
+    const response = await fetch(url);
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || "Request failed");
+    return data;
+}
+
+async function loadOptions() {
+    const [patients, doctors] = await Promise.all([
+        getJSON("/api/patients"), getJSON("/api/doctors")
+    ]);
+
+    const patientSelect = document.getElementById("patient");
+    const doctorSelect = document.getElementById("doctor");
+
+    patientSelect.replaceChildren(new Option("Select patient", ""));
+    doctorSelect.replaceChildren(new Option("Select doctor", ""));
+
+    patients.forEach(p => patientSelect.add(
+        new Option(p.patient_name + " (ID " + p.patient_id + ")", p.patient_id)
+    ));
+    doctors.forEach(d => doctorSelect.add(
+        new Option(d.doctor_name + " (ID " + d.doctor_id + ")", d.doctor_id)
+    ));
+}
+
+async function loadAppointments() {
+    const rows = await getJSON("/api/appointments");
+    const tbody = document.getElementById("appointments");
+    tbody.replaceChildren();
+
+    if (!rows.length) {
+        const tr = document.createElement("tr");
+        const td = document.createElement("td");
+        td.colSpan = 6;
+        td.textContent = "No appointments yet.";
+        tr.appendChild(td);
+        tbody.appendChild(tr);
+        return;
+    }
+
+    rows.forEach(a => {
+        const tr = document.createElement("tr");
+        [
+            a.appointment_id, a.patient_name, a.doctor_name,
+            a.appointment_date, a.reason || "—", a.status
+        ].forEach(value => {
+            const td = document.createElement("td");
+            td.textContent = value;
+            tr.appendChild(td);
+        });
+        tbody.appendChild(tr);
+    });
+}
+
+document.getElementById("appointment-form").addEventListener("submit", async e => {
+    e.preventDefault();
+    const message = document.getElementById("message");
+    const data = Object.fromEntries(new FormData(e.currentTarget).entries());
+
+    try {
+        const response = await fetch("/api/appointments", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify(data)
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || "Scheduling failed");
+
+        message.textContent = result.message;
+        e.currentTarget.reset();
+        await loadAppointments();
+    } catch (error) {
+        message.textContent = error.message;
+    }
+});
+
+(async () => {
+    try {
+        await loadOptions();
+        await loadAppointments();
+    } catch (error) {
+        document.getElementById("message").textContent = error.message;
+    }
+})();
+</script>
+</body>
+</html>

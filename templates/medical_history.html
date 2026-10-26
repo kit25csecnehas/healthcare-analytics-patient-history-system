@@ -1,0 +1,164 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Medical History & Prescriptions</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        body { padding: 25px; font-family: Arial, sans-serif; }
+        .panel { background: white; padding: 20px; margin: 20px 0; border-radius: 12px; }
+        input, select, textarea, button { padding: 10px; margin: 6px 0; box-sizing: border-box; }
+        input, select, textarea { width: 100%; }
+        button { cursor: pointer; background: #2457d6; color: white; border: 0; border-radius: 6px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th, td { border: 1px solid #ddd; padding: 9px; text-align: left; }
+        th { background: #eef2ff; }
+        .message { margin-top: 10px; }
+    </style>
+</head>
+<body>
+    <h1>Medical History & Prescriptions</h1>
+    <p><a href="/">← Back to Dashboard</a></p>
+
+    <section class="panel">
+        <h2>Add Medical Record</h2>
+        <form id="recordForm">
+            <select id="patient" required><option value="">Select patient</option></select>
+            <select id="doctor" required><option value="">Select doctor</option></select>
+            <input id="diagnosis" placeholder="Diagnosis" required>
+            <textarea id="symptoms" placeholder="Symptoms"></textarea>
+            <textarea id="treatment" placeholder="Treatment"></textarea>
+            <input id="recordDate" type="date" required>
+            <button type="submit">Save Medical Record</button>
+        </form>
+        <div id="recordMessage" class="message"></div>
+    </section>
+
+    <section class="panel">
+        <h2>Medical Records</h2>
+        <div style="overflow-x:auto">
+            <table>
+                <thead><tr><th>ID</th><th>Patient</th><th>Doctor</th><th>Diagnosis</th><th>Symptoms</th><th>Treatment</th><th>Date</th></tr></thead>
+                <tbody id="records"></tbody>
+            </table>
+        </div>
+    </section>
+
+    <section class="panel">
+        <h2>Add Prescription</h2>
+        <form id="prescriptionForm">
+            <select id="recordId" required><option value="">Select medical record</option></select>
+            <input id="medicine" placeholder="Medicine name" required>
+            <input id="dosage" placeholder="Dosage (e.g. 1 tablet)" required>
+            <input id="frequency" placeholder="Frequency (e.g. twice daily)" required>
+            <input id="duration" placeholder="Duration (e.g. 5 days)" required>
+            <button type="submit">Save Prescription</button>
+        </form>
+        <div id="prescriptionMessage" class="message"></div>
+    </section>
+
+    <section class="panel">
+        <h2>Prescriptions</h2>
+        <div style="overflow-x:auto">
+            <table>
+                <thead><tr><th>ID</th><th>Patient</th><th>Record ID</th><th>Medicine</th><th>Dosage</th><th>Frequency</th><th>Duration</th></tr></thead>
+                <tbody id="prescriptions"></tbody>
+            </table>
+        </div>
+    </section>
+
+<script>
+const patientSelect = document.getElementById("patient");
+const doctorSelect = document.getElementById("doctor");
+const recordSelect = document.getElementById("recordId");
+
+async function loadOptions() {
+    const [patientsRes, doctorsRes] = await Promise.all([
+        fetch("/api/patients"), fetch("/api/doctors")
+    ]);
+    const patients = await patientsRes.json();
+    const doctors = await doctorsRes.json();
+
+    patients.forEach(p => patientSelect.add(new Option(p.patient_name + " (ID " + p.patient_id + ")", p.patient_id)));
+    doctors.forEach(d => doctorSelect.add(new Option(d.doctor_name + " (ID " + d.doctor_id + ")", d.doctor_id)));
+}
+
+async function loadRecords() {
+    const res = await fetch("/api/medical-history");
+    const records = await res.json();
+    document.getElementById("records").replaceChildren();
+    recordSelect.replaceChildren(new Option("Select medical record", ""));
+    records.forEach(r => {
+        const tr = document.createElement("tr");
+        [r.record_id, r.patient_name, r.doctor_name, r.diagnosis, r.symptoms, r.treatment, r.record_date]
+            .forEach(value => {
+                const td = document.createElement("td");
+                td.textContent = value ?? "";
+                tr.appendChild(td);
+            });
+        document.getElementById("records").appendChild(tr);
+        recordSelect.add(new Option("Record " + r.record_id + " - " + r.patient_name, r.record_id));
+    });
+}
+
+async function loadPrescriptions() {
+    const res = await fetch("/api/prescriptions");
+    const items = await res.json();
+    const body = document.getElementById("prescriptions");
+    body.replaceChildren();
+    items.forEach(p => {
+        const tr = document.createElement("tr");
+        [p.prescription_id, p.patient_name, p.record_id, p.medicine_name,
+         p.dosage, p.frequency, p.duration].forEach(value => {
+            const td = document.createElement("td");
+            td.textContent = value ?? "";
+            tr.appendChild(td);
+        });
+        body.appendChild(tr);
+    });
+}
+
+document.getElementById("recordForm").addEventListener("submit", async e => {
+    e.preventDefault();
+    const data = {
+        patient_id: patientSelect.value,
+        doctor_id: doctorSelect.value,
+        diagnosis: document.getElementById("diagnosis").value,
+        symptoms: document.getElementById("symptoms").value,
+        treatment: document.getElementById("treatment").value,
+        record_date: document.getElementById("recordDate").value
+    };
+    const res = await fetch("/api/medical-history", {
+        method: "POST", headers: {"Content-Type": "application/json"},
+        body: JSON.stringify(data)
+    });
+    const result = await res.json();
+    document.getElementById("recordMessage").textContent = result.message || result.error || "Request completed";
+    if (res.ok) { e.target.reset(); await loadRecords(); }
+});
+
+document.getElementById("prescriptionForm").addEventListener("submit", async e => {
+    e.preventDefault();
+    const data = {
+        record_id: recordSelect.value,
+        medicine_name: document.getElementById("medicine").value,
+        dosage: document.getElementById("dosage").value,
+        frequency: document.getElementById("frequency").value,
+        duration: document.getElementById("duration").value
+    };
+    const res = await fetch("/api/prescriptions", {
+        method: "POST", headers: {"Content-Type": "application/json"},
+        body: JSON.stringify(data)
+    });
+    const result = await res.json();
+    document.getElementById("prescriptionMessage").textContent = result.message || result.error || "Request completed";
+    if (res.ok) { e.target.reset(); await loadPrescriptions(); }
+});
+
+loadOptions().then(() => Promise.all([loadRecords(), loadPrescriptions()]));
+document.getElementById("recordDate").value = new Date().toISOString().slice(0, 10);
+</script>
+</body>
+</html>

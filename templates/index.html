@@ -1,0 +1,255 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Healthcare Analytics Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <aside class="sidebar">
+        <h2>✚ HealthCare</h2>
+        <p class="menu-label">MAIN MENU</p>
+        <a class="active" href="/">Dashboard</a>
+        <a href="/patients">Patients</a>
+        <a href="#appointments">Appointments</a>
+        <a href="#analytics">Analytics</a>
+        <a href="/doctors">Doctors</a>
+        <a href="/appointments">Appointments</a>
+        <a href="/medical-history">Medical History & Prescriptions</a>
+        <div class="sidebar-footer">Patient History System</div>
+    </aside>
+
+    <main class="main-content">
+        <header class="topbar">
+            <div>
+                <p class="eyebrow">HEALTHCARE MANAGEMENT</p>
+                <h1>Dashboard Overview</h1>
+                <p class="subtitle">Monitor patient records and hospital activity.</p>
+            </div>
+            <div class="admin-badge">Administrator</div>
+        </header>
+
+        <section class="welcome">
+            <div>
+                <p class="eyebrow">HEALTH ANALYTICS</p>
+                <h2>Your healthcare insights, at a glance.</h2>
+                <p>Manage patient information and review clinical activity in one place.</p>
+            </div>
+            <div class="welcome-icon">✚</div>
+        </section>
+
+        <section class="stats" id="patients">
+            <article class="stat-card">
+                <p>Total Patients</p>
+                <h2 id="patient-count">—</h2>
+                <span>Registered patient records</span>
+            </article>
+            <article class="stat-card">
+                <p>Total Doctors</p>
+                <h2 id="doctor-count">—</h2>
+                <span>Healthcare professionals</span>
+            </article>
+            <article class="stat-card" id="appointments">
+                <p>Total Appointments</p>
+                <h2 id="appointment-count">—</h2>
+                <span>Appointments recorded</span>
+            </article>
+            <article class="stat-card">
+                <p>Medical Records</p>
+                <h2 id="record-count">—</h2>
+                <span>Patient history entries</span>
+            </article>
+        </section>
+
+<section class="panel registration-panel" id="register-patient">
+    <h3>Register a New Patient</h3>
+    <p class="panel-subtitle">Enter patient details below.</p>
+
+    <form id="patient-form">
+        <div class="form-grid">
+            <label>
+                Patient Name *
+                <input name="patient_name" required maxlength="100"
+                       placeholder="Enter full name">
+            </label>
+
+            <label>
+                Date of Birth
+                <input name="date_of_birth" type="date">
+            </label>
+
+            <label>
+                Gender
+                <select name="gender">
+                    <option value="">Select gender</option>
+                    <option value="Female">Female</option>
+                    <option value="Male">Male</option>
+                    <option value="Other">Other</option>
+                </select>
+            </label>
+
+            <label>
+                Phone
+                <input name="phone" maxlength="15"
+                       placeholder="Phone number">
+            </label>
+
+            <label>
+                Email
+                <input name="email" type="email" maxlength="100"
+                       placeholder="Email address">
+            </label>
+
+            <label>
+                Blood Group
+                <select name="blood_group">
+                    <option value="">Select blood group</option>
+                    <option>A+</option>
+                    <option>A-</option>
+                    <option>B+</option>
+                    <option>B-</option>
+                    <option>AB+</option>
+                    <option>AB-</option>
+                    <option>O+</option>
+                    <option>O-</option>
+                </select>
+            </label>
+
+            <label class="full-width">
+                Address
+                <input name="address" maxlength="255"
+                       placeholder="Enter address">
+            </label>
+        </div>
+
+        <button class="submit-button" type="submit">
+            + Register Patient
+        </button>
+
+        <p id="form-message" role="status"></p>
+    </form>
+</section>
+
+<script>
+document.getElementById("patient-form").addEventListener("submit",
+    async function (event) {
+        event.preventDefault();
+
+        const form = event.currentTarget;
+        const values = Object.fromEntries(new FormData(form).entries());
+        const message = document.getElementById("form-message");
+
+        try {
+            const response = await fetch("/api/patients", {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify(values)
+            });
+
+            const result = await response.json();
+
+            if (!response.ok) {
+                throw new Error(result.error || "Registration failed");
+            }
+
+            message.textContent =
+                result.message + " Patient ID: " + result.patient_id;
+
+            form.reset();
+            await loadDashboard();
+
+        } catch (error) {
+            message.textContent = error.message;
+        }
+    }
+);
+</script>
+
+        <section class="analytics-grid" id="analytics">
+            <article class="panel">
+                <h3>Appointments by Status</h3>
+                <p class="panel-subtitle">Overview of appointment records</p>
+                <div class="chart-container">
+                    <canvas id="appointmentChart"></canvas>
+                </div>
+            </article>
+            <article class="panel">
+                <h3>Patients by Gender</h3>
+                <p class="panel-subtitle">Patient demographic overview</p>
+                <div class="chart-container">
+                    <canvas id="genderChart"></canvas>
+                </div>
+            </article>
+        </section>
+
+        <footer>
+            Healthcare Analytics & Patient History System
+            <span>Academic project dashboard</span>
+        </footer>
+    </main>
+
+    <script>
+        async function loadDashboard() {
+            try {
+                const response = await fetch("/api/dashboard");
+
+                if (!response.ok) {
+                    throw new Error("Could not load dashboard data");
+                }
+
+                const data = await response.json();
+
+                document.getElementById("patient-count").textContent = data.patients;
+                document.getElementById("doctor-count").textContent = data.doctors;
+                document.getElementById("appointment-count").textContent = data.appointments;
+                document.getElementById("record-count").textContent = data.records;
+
+                new Chart(document.getElementById("appointmentChart"), {
+                    type: "doughnut",
+                    data: {
+                        labels: data.appointment_labels,
+                        datasets: [{
+                            data: data.appointment_values,
+                            backgroundColor: ["#3678f5", "#18b89a", "#f5ad42", "#ef6b76"],
+                            borderWidth: 0
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { position: "bottom" } }
+                    }
+                });
+
+                new Chart(document.getElementById("genderChart"), {
+                    type: "bar",
+                    data: {
+                        labels: data.gender_labels,
+                        datasets: [{
+                            label: "Patients",
+                            data: data.gender_values,
+                            backgroundColor: "#3678f5",
+                            borderRadius: 6
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: { y: { beginAtZero: true, ticks: { precision: 0 } } },
+                        plugins: { legend: { display: false } }
+                    }
+                });
+            } catch (error) {
+                console.error(error);
+                document.querySelector(".subtitle").textContent =
+                    "Dashboard data could not be loaded. Check the Flask server and database.";
+            }
+        }
+
+        loadDashboard();
+    </script>
+</body>
+</html>
